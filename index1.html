@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portal Escolar Completo (Dashboard + Dark Mode + Trabalhos/Provas + Faltas Rápidas)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<style>
+  :root {
+    --brand:#1e40af; --brand-2:#3b82f6; --danger:#ef4444; --accent:#10b981;
+    --bg:#f5f7fb; --surface:#fff; --muted:#6b7280; --border:#e5e7eb; --text:#111;
+    --radius:12px; --shadow:0 8px 24px rgba(0,0,0,.06);
+    --font: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  }
+  body.dark {
+    --bg:#111827; --surface:#1f2937; --muted:#9ca3af; --border:#374151; --text:#f9fafb;
+  }
+
+  *{ box-sizing:border-box; font-family:var(--font);}
+  html,body{height:100%;}
+  body{ margin:0; background:var(--bg); color:var(--text); display:flex; flex-direction:column; }
+
+  header{
+    background:var(--brand); color:#fff; padding:16px 20px;
+    display:flex; justify-content:space-between; align-items:center;
+    box-shadow:var(--shadow);
+  }
+  header .logo{ font-weight:700; font-size:18px; display:flex; gap:8px; align-items:center; }
+  header .logo span{ background:#fff; color:var(--brand); border-radius:8px; padding:2px 8px;}
+  header .user{ font-size:14px; opacity:.9; display:flex; align-items:center; gap:10px; }
+
+  .toggle-theme {
+    background:transparent; border:1px solid #fff; color:#fff;
+    padding:5px 8px; border-radius:8px; cursor:pointer;
+  }
+
+  main{ flex:1; width:100%; max-width:1200px; margin:24px auto; padding:0 12px 36px; }
+  .auth{
+    max-width:480px; margin:40px auto; padding:24px 20px; background:var(--surface); border-radius:var(--radius);
+    border:1px solid var(--border); box-shadow:var(--shadow);
+  }
+  h1,h2,h3{ margin:0 0 12px; }
+  p{ margin:0 0 12px; color:var(--muted); }
+
+  input, select, textarea, button{
+    font-size:15px; border-radius:8px; padding:10px 12px; border:1px solid var(--border);
+    width:100%; margin:4px 0 10px; background:#fff;
+  }
+  body.dark input, body.dark select, body.dark textarea{
+    background:#111827; color:#f9fafb; border-color:#374151;
+  }
+  textarea{ resize:vertical; }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--brand-2); }
+  button{
+    cursor:pointer; border:0; background:var(--brand-2); color:#fff; font-weight:600;
+    transition:.15s filter;
+  }
+  button:hover{ filter:brightness(.95); }
+  .btn-ghost{ background:transparent; color:var(--brand-2); border:1px solid var(--brand-2); }
+  .btn-danger{ background:var(--danger); }
+  .btn-success{ background:var(--accent); }
+  .btn-small{ padding:6px 8px; font-size:13px; border-radius:6px; width:auto; }
+
+  .app{ display:flex; gap:16px; }
+  aside{
+    width:260px; background:#0f172a; color:#cbd5e1; border-radius:var(--radius);
+    padding:16px; height:calc(100vh - 140px); position:sticky; top:96px; display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .menu h4{
+    text-transform:uppercase; font-size:12px; letter-spacing:.06em; opacity:.6; margin:14px 0 8px;
+  }
+  .menu button{
+    width:100%; background:transparent; border:0; text-align:left; color:#cbd5e1; padding:8px 10px;
+    border-radius:8px; cursor:pointer; transition:.15s background; font-size:14px;
+  }
+  .menu button:hover, .menu button.active{ background:rgba(255,255,255,.08); }
+  .logout button{ width:100%; }
+
+  .content{
+    flex:1; min-width:0;
+  }
+  .section{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:18px 18px 22px; margin-bottom:18px;
+  }
+  .muted{ color:var(--muted); font-size:14px; }
+
+  table{
+    width:100%; border-collapse:collapse; margin:12px 0;
+  }
+  th, td{
+    border:1px solid var(--border); padding:8px 10px; text-align:center;
+  }
+  th{ background:#eff6ff; }
+  body.dark th{ background:#374151; color:#f9fafb; }
+  .nowrap{ white-space:nowrap; }
+  .list{ max-height:320px; overflow:auto; padding-right:6px; }
+  .card{
+    background:#f9fafb; border:1px solid var(--border); border-radius:10px; padding:14px; margin:12px 0;
+  }
+  body.dark .card{ background:#1f2937; border-color:#374151; }
+
+  .grid-cards{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap:12px; margin-bottom:18px;
+  }
+  .stat{
+    background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow);
+    padding:16px; display:flex; flex-direction:column; gap:6px;
+  }
+  body.dark .stat{ background:#1f2937; border-color:#374151; }
+  .stat .label{ color:#64748b; font-size:13px; }
+  body.dark .stat .label{ color:#9ca3af; }
+  .stat .value{ font-size:22px; font-weight:700; color:#0f172a; }
+  body.dark .stat .value{ color:#f9fafb; }
+
+  .hidden{ display:none !important; }
+
+  footer{
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    text-align:center;
+    padding:12px;
+    font-size:14px;
+    color:var(--muted);
+  }
+  footer a{
+    color:var(--brand-2);
+    text-decoration:none;
+  }
+
+  @media(max-width:980px){
+    aside{ display:none; }
+    header{ flex-wrap:wrap; gap:8px; }
+    .app{ display:block; }
+  }
+</style>
+</head>
+<body>
+
+<header id="topbar" class="hidden">
+  <div class="logo"><span>🎓</span> Portal Escolar</div>
+  <div class="user" id="topUser">
+    <button class="toggle-theme" id="btnToggleTheme">🌙</button>
+  </div>
+</header>
+
+<main>
+  <!-- ======= LOGIN / CADASTRO ======= -->
+  <section class="auth" id="auth">
+    <h2>Entrar</h2>
+    <select id="loginRole">
+      <option value="PROF">Professor</option>
+      <option value="ALUNO">Aluno</option>
+    </select>
+
+    <div id="cpfLoginBox">
+      <input id="loginCPF" placeholder="CPF (somente números)" maxlength="11" />
+    </div>
+
+    <input id="loginUser" placeholder="Usuário" autocomplete="username" />
+    <input id="loginPass" placeholder="Senha" type="password" autocomplete="current-password" />
+    <button id="btnLogin">Entrar</button>
+
+    <hr style="margin:20px 0">
+
+    <h3>Cadastrar professor</h3>
+    <input id="regProfCPF" placeholder="CPF (somente números)" maxlength="11" />
+    <label for="regProfBirth">Data de nascimento</label>
+    <input id="regProfBirth" type="date" />
+    <input id="regProfUser" placeholder="Usuário" />
+    <input id="regProfPass" placeholder="Senha (mínimo 4 números)" type="password" />
+    <button id="btnRegProf">Cadastrar</button>
+    <p class="muted" id="regMsg"></p>
+  </section>
+
+  <!-- ======= APP ======= -->
+  <div id="app" class="app hidden">
+
+    <!-- LATERAL -->
+    <aside>
+      <div>
+        <div class="menu" id="menuProf" style="display:none;">
+          <h4>Professor</h4>
+          <button data-prof="dashboard" class="active">Dashboard</button>
+          <button data-prof="turmas">Turmas</button>
+          <button data-prof="plano">Plano de aula</button>
+          <button data-prof="presencas">Presenças</button>
+          <button data-prof="faltasRapidas">Faltas Rápidas</button><!-- NOVO -->
+          <button data-prof="boletins">Boletins / PDF / Gráficos</button>
+          <button data-prof="atividades">Atividades</button>
+          <button data-prof="trabalhos">Trabalhos / Provas</button>
+        </div>
+
+        <div class="menu" id="menuAluno" style="display:none;">
+          <h4>Aluno</h4>
+          <button data-aluno="boletim" class="active">Boletim</button>
+          <button data-aluno="plano">Plano de aula</button>
+          <button data-aluno="presencas">Presenças</button>
+          <button data-aluno="atividades">Atividades</button>
+          <button data-aluno="trabalhos">Trabalhos / Provas</button>
+        </div>
+      </div>
+      <div class="logout">
+        <button onclick="logout()">Sair</button>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO PROFESSOR -->
+    <div class="content" id="contentProf" style="display:none;">
+
+      <!-- DASHBOARD -->
+      <div id="profDashboard" class="section">
+        <h2>Dashboard</h2>
+        <p class="muted">Resumo rápido das suas turmas.</p>
+
+        <div class="grid-cards">
+          <div class="stat">
+            <span class="label">Total de turmas</span>
+            <span class="value" id="dashTurmas">0</span>
+          </div>
+          <div class="stat">
+          <span class="label">Total de alunos</span>
+            <span class="value" id="dashAlunos">0</span>
+          </div>
+          <div class="stat">
+            <span class="label">Média geral (todas as turmas)</span>
+            <span class="value" id="dashMediaGeral">0.00</span>
+          </div>
+          <div class="stat">
+            <span class="label">Total de faltas</span>
+            <span class="value" id="dashFaltas">0</span>
+          </div>
+        </div>
+
+        <h3>Média geral por turma</h3>
+        <canvas id="dashChart" style="max-width:700px;"></canvas>
+      </div>
+
+      <!-- Turmas -->
+      <div id="profTurmas" class="section hidden">
+        <h2>Turmas</h2>
+        <div class="row">
+          <input id="tNome" placeholder="Nome da turma (ex: 7º A)">
+          <input id="tAno" placeholder="Ano letivo (ex: 2025)">
+          <input id="tSerie" placeholder="Série (ex: 7º ano)">
+        </div>
+        <button onclick="criarTurma()">Criar turma</button>
+        <div id="listaTurmas" style="margin-top:18px;"></div>
+      </div>
+
+      <!-- Plano de aula -->
+      <div id="profPlano" class="section hidden">
+        <h2>Plano de aula</h2>
+        <select id="planoTurmaSelect"></select>
+        <textarea id="planoTexto" rows="6" placeholder="Conteúdos, objetivos, atividades..."></textarea>
+        <button onclick="salvarPlano()">Salvar plano</button>
+        <p id="planoMsg" class="muted" style="margin-top:8px;"></p>
+      </div>
+
+      <!-- Presenças -->
+      <div id="profPresencas" class="section hidden">
+        <h2>Presenças</h2>
+        <select id="presTurmaSelect"></select>
+        <input type="date" id="presData">
+        <div id="presLista"></div>
+      </div>
+
+      <!-- ===== FALTAS RÁPIDAS (NOVO) ===== -->
+      <div id="profFaltasRapidas" class="section hidden">
+        <h2>Faltas Rápidas</h2>
+        <p class="muted">Digite/atualize diretamente as faltas de cada aluno e visualize o gráfico.</p>
+        <select id="faltasTurmaSelect"></select>
+        <div id="faltasRapidasBox" style="margin-top:12px;"></div>
+        <canvas id="faltasChart" style="max-width:700px; margin-top:20px;"></canvas>
+      </div>
+
+      <!-- Boletins / PDF / Gráficos -->
+      <div id="profBoletins" class="section hidden">
+        <h2>Boletins / PDF / Gráficos</h2>
+        <select id="boletimTurmaSelect"></select>
+        <div id="boletimTurma"></div>
+        <button id="btnPDF" class="btn-success">Exportar PDF</button>
+        <canvas id="graficoTurma" style="max-width:700px; margin-top:20px;"></canvas>
+      </div>
+
+      <!-- Atividades -->
+      <div id="profAtividades" class="section hidden">
+        <h2>Atividades</h2>
+        <select id="ativTurmaSelect"></select>
+        <input type="file" id="ativUpload" multiple>
+        <button onclick="enviarAtividades()">Enviar</button>
+        <div id="ativLista" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Trabalhos / Provas -->
+      <div id="profTrabalhos" class="section hidden">
+        <h2>Trabalhos / Provas</h2>
+        <select id="trabTurmaSelect"></select>
+
+        <h3>Criar novo</h3>
+        <input id="trabTitulo" placeholder="Título" />
+        <textarea id="trabDescricao" rows="4" placeholder="Descrição / Enunciado"></textarea>
+        <label>Data limite</label>
+        <input type="date" id="trabDataLimite" />
+        <label>Anexos do professor (opcional)</label>
+        <input type="file" id="trabArquivosProf" multiple />
+        <button onclick="criarTrabalho()">Criar trabalho/prova</button>
+
+        <hr />
+
+        <h3>Trabalhos criados</h3>
+        <div id="trabLista"></div>
+
+        <div id="trabDetalhe" class="hidden">
+          <h3 id="trabDetalheTitulo"></h3>
+          <p id="trabDetalheDesc" class="muted"></p>
+          <p class="muted">Data limite: <span id="trabDetalheLimite"></span></p>
+
+          <h4>Entregas dos alunos</h4>
+          <div id="trabSubmissoes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO ALUNO -->
+    <div class="content" id="contentAluno" style="display:none;">
+
+      <div id="alunoBoletim" class="section">
+        <h2>Boletim</h2>
+        <div id="alunoBoletimBox"></div>
+      </div>
+
+      <div id="alunoPlano" class="section hidden">
+        <h2>Plano de aula</h2>
+        <div id="alunoPlanoBox"></div>
+      </div>
+
+      <div id="alunoPresencas" class="section hidden">
+        <h2>Presenças</h2>
+        <div id="alunoPresencasBox"></div>
+      </div>
+
+      <div id="alunoAtividades" class="section hidden">
+        <h2>Atividades</h2>
+        <div id="alunoAtividadesBox"></div>
+      </div>
+
+      <div id="alunoTrabalhos" class="section hidden">
+        <h2>Trabalhos / Provas</h2>
+        <div id="alunoTrabalhosLista"></div>
+
+        <div id="alunoTrabalhoDetalhe" class="hidden">
+          <h3 id="alunoTrabTitulo"></h3>
+          <p class="muted" id="alunoTrabDesc"></p>
+          <p class="muted">Data limite: <span id="alunoTrabLimite"></span></p>
+
+          <div id="alunoFeedbackBox" class="hidden"></div>
+
+          <h4>Enviar minha entrega</h4>
+          <input type="file" id="alunoTrabFiles" multiple />
+          <button onclick="alunoEnviarTrabalho()">Enviar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  Desenvolvido por <strong>Daniel de Oliveira Rocha</strong> |
+  <a href="mailto:danielconta380@gmail.com">danielconta380@gmail.com</a> |
+  <a href="https://instagram.com/da4nyel" target="_blank">@da4nyel</a> |
+  <a href="tel:+5577999020790">+55 77 99902-0790</a>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* ===================== Tema (Dark Mode) ===================== */
+function applyTheme(theme){
+  if(theme === 'dark') document.body.classList.add('dark');
+  else document.body.classList.remove('dark');
+}
+function toggleTheme(){
+  const isDark = document.body.classList.contains('dark');
+  applyTheme(isDark ? 'light' : 'dark');
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+document.getElementById('btnToggleTheme').onclick = toggleTheme;
+applyTheme(localStorage.getItem('theme') || 'light');
+
+/* ===================== CONSTANTES ===================== */
+const ADMIN_CPF = "08331179552";
+
+/* ===================== DB (localStorage) ===================== */
+const DB_KEY = 'portal_escolar_full_v4_trabalhos_faltasrapidas';
+const SESSION_KEY = 'portal_escolar_session_v4_trabalhos_faltasrapidas';
+
+function loadDB(){
+  return JSON.parse(localStorage.getItem(DB_KEY) || JSON.stringify({
+    professores: [] // {username, senha, cpf, birthDate, turmas: [{..., trabalhos: []}]}
+  }));
+}
+function saveDB(){
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+let db = loadDB();
+
+function setSession(s){ localStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
+function getSession(){ return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
+function clearSession(){ localStorage.removeItem(SESSION_KEY); }
+
+const MATERIAS = ['Português','Matemática','Ciências','História','Geografia','Inglês','Artes','Educação Física','Ensino Religioso'];
+
+/* ===================== Sessão carregada? ===================== */
+let S = getSession();
+if(S){
+  document.getElementById('topbar').classList.remove('hidden');
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('topUser').insertAdjacentText('afterbegin', `${S.role === 'PROF' ? 'Professor' : 'Aluno'}: ${S.user} `);
+  if(S.role === 'PROF') initProfessor();
+  else initAluno();
+}
+
+/* ===================== Helpers ===================== */
+function isValidCPF(cpf){ return /^\d{11}$/.test(cpf); }
+function isValidPassword(pass){ return /^\d{4,}$/.test(pass); }
+function calcAge(dateStr){
+  if(!dateStr) return 0;
+  const today = new Date();
+  const dob = new Date(dateStr);
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if(m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age;
+}
+function alertAndFocus(msg, elId){
+  alert(msg);
+  if(elId) document.getElementById(elId)?.focus();
+}
+
+/* ===================== Login / Cadastro ===================== */
+const loginRole = document.getElementById('loginRole');
+const cpfLoginBox = document.getElementById('cpfLoginBox');
+loginRole.onchange = () => {
+  cpfLoginBox.style.display = loginRole.value === 'PROF' ? 'block' : 'none';
+};
+loginRole.onchange();
+
+document.getElementById('btnLogin').onclick = () => {
+  const role = loginRole.value;
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const cpf = (document.getElementById('loginCPF').value || '').trim();
+
+  if(role === 'PROF'){
+    if(!isValidCPF(cpf)) return alertAndFocus('CPF inválido. Informe 11 dígitos.', 'loginCPF');
+  }
+  if(!user || !pass){ return alert('Usuário e senha são obrigatórios.'); }
+
+  if(role === 'PROF'){
+    const idx = db.professores.findIndex(p => p.username === user && p.senha === pass && p.cpf === cpf);
+    if(idx === -1){ alert('Dados de professor inválidos.'); return; }
+    S = { role:'PROF', user, profIndex: idx };
+    setSession(S);
+    document.getElementById('topbar').classList.remove('hidden');
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('topUser').insertAdjacentText('afterbegin', `Professor: ${user} `);
+    initProfessor();
+  }else{
+    // aluno
+    let found = null;
+    db.professores.forEach((p, pi) => {
+      (p.turmas||[]).forEach((t, ti) => {
+        (t.alunos||[]).forEach((a, ai) => {
+          if(a.username === user && a.senha === pass){
+            found = {p:pi, t:ti, a:ai};
+          }
+        });
+      });
+    });
+    if(!found){ alert('Aluno não encontrado ou senha incorreta.'); return; }
+    S = { role:'ALUNO', user, profIndex: found.p, turmaIndex: found.t, alunoIndex: found.a };
+    setSession(S);
+    document.getElementById('topbar').classList.remove('hidden');
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('topUser').insertAdjacentText('afterbegin', `Aluno: ${user} `);
+    initAluno();
+  }
+};
+
+document.getElementById('btnRegProf').onclick = () => {
+  const cpf = document.getElementById('regProfCPF').value.trim();
+  const birth = document.getElementById('regProfBirth').value.trim();
+  const user = document.getElementById('regProfUser').value.trim();
+  const pass = document.getElementById('regProfPass').value.trim();
+
+  if(!isValidCPF(cpf)) return alertAndFocus('CPF inválido. Informe 11 dígitos numéricos.', 'regProfCPF');
+  if(!isValidPassword(pass)) return alertAndFocus('Senha deve conter pelo menos 4 números.', 'regProfPass');
+  if(!user) return alertAndFocus('Informe o usuário.', 'regProfUser');
+
+  if(cpf !== ADMIN_CPF){
+    const age = calcAge(birth);
+    if(age < 18){
+      alert('Apenas maiores de 18 anos podem criar conta de professor.');
+      return;
+    }
+  }
+
+  if(db.professores.find(p => p.username === user)){
+    alert('Usuário já existe.');
+    return;
+  }
+  if(db.professores.find(p => p.cpf === cpf)){
+    alert('Já existe um professor com esse CPF.');
+    return;
+  }
+
+  db.professores.push({
+    username: user,
+    senha: pass,
+    cpf,
+    birthDate: birth || null,
+    turmas: []
+  });
+  saveDB();
+
+  document.getElementById('regMsg').textContent = 'Professor cadastrado com sucesso!';
+  document.getElementById('regProfCPF').value='';
+  document.getElementById('regProfBirth').value='';
+  document.getElementById('regProfUser').value='';
+  document.getElementById('regProfPass').value='';
+};
+
+/* ===================== Logout ===================== */
+function logout(){
+  clearSession();
+  location.reload();
+}
+
+/* ===================== Fluxo Professor ===================== */
+let dashChartInstance = null;
+let chart = null;
+let faltasChartInstance = null; // chart da seção Faltas Rápidas
+
+function initProfessor(){
+  document.getElementById('menuProf').style.display='block';
+  document.getElementById('menuAluno').style.display='none';
+  document.getElementById('contentProf').style.display='block';
+  document.getElementById('contentAluno').style.display='none';
+
+  document.querySelectorAll('[data-prof]').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('[data-prof]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.getAttribute('data-prof');
+      showProfTab(tab);
+    }
+  });
+
+  renderTurmas();
+  fillTurmaSelects();
+  showProfTab('dashboard');
+}
+
+function showProfTab(tab){
+  const ids = [
+    'profDashboard','profTurmas','profPlano','profPresencas',
+    'profFaltasRapidas', // NOVO
+    'profBoletins','profAtividades','profTrabalhos'
+  ];
+  ids.forEach(id => document.getElementById(id).classList.add('hidden'));
+
+  if(tab==='dashboard'){ document.getElementById('profDashboard').classList.remove('hidden'); renderDashboard(); }
+  if(tab==='turmas') document.getElementById('profTurmas').classList.remove('hidden');
+  if(tab==='plano'){ document.getElementById('profPlano').classList.remove('hidden'); renderPlano(); }
+  if(tab==='presencas'){ document.getElementById('profPresencas').classList.remove('hidden'); renderPresencas(); }
+  if(tab==='faltasRapidas'){ // NOVO
+    document.getElementById('profFaltasRapidas').classList.remove('hidden');
+    renderFaltasRapidas();
+  }
+  if(tab==='boletins'){ document.getElementById('profBoletins').classList.remove('hidden'); renderBoletins(); }
+  if(tab==='atividades'){ document.getElementById('profAtividades').classList.remove('hidden'); renderAtividades(); }
+  if(tab==='trabalhos'){ document.getElementById('profTrabalhos').classList.remove('hidden'); renderTrabalhos(); }
+}
+
+function getProf(){
+  return db.professores[S.profIndex];
+}
+
+/* ===================== DASHBOARD ===================== */
+function calcMediaAluno(aluno){
+  let somaMat = 0;
+  MATERIAS.forEach(m=>{
+    const n = aluno.notas[m] || [0,0,0];
+    somaMat += (n[0]+n[1]+n[2])/3;
+  });
+  return somaMat / MATERIAS.length;
+}
+function calcMediaTurma(turma){
+  if(!turma.alunos || turma.alunos.length === 0) return 0;
+  let soma = 0;
+  turma.alunos.forEach(a => soma += calcMediaAluno(a));
+  return soma / turma.alunos.length;
+}
+function renderDashboard(){
+  const prof = getProf();
+  const turmas = prof.turmas || [];
+
+  const totalTurmas = turmas.length;
+  const totalAlunos = turmas.reduce((acc,t)=> acc + (t.alunos?.length || 0), 0);
+  const totalFaltas = turmas.reduce((acc,t)=> acc + (t.alunos||[]).reduce((f, a)=> f + (a.faltas||0), 0), 0);
+
+  let somaTodas = 0, contTodas = 0;
+  turmas.forEach(t=>{
+    if(t.alunos?.length){
+      t.alunos.forEach(a=>{
+        somaTodas += calcMediaAluno(a);
+        contTodas++;
+      });
+    }
+  });
+  const mediaGeral = contTodas ? (somaTodas/contTodas).toFixed(2) : '0.00';
+
+  document.getElementById('dashTurmas').textContent = totalTurmas;
+  document.getElementById('dashAlunos').textContent = totalAlunos;
+  document.getElementById('dashFaltas').textContent = totalFaltas;
+  document.getElementById('dashMediaGeral').textContent = mediaGeral;
+
+  const labels = turmas.map(t=>t.nome);
+  const data = turmas.map(t=> parseFloat(calcMediaTurma(t).toFixed(2)));
+
+  const ctx = document.getElementById('dashChart').getContext('2d');
+  if(dashChartInstance) dashChartInstance.destroy();
+  dashChartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Média geral da turma', data }] },
+    options:{ responsive: true, scales: { y: { beginAtZero:true, max:10 } } }
+  });
+}
+
+/* ===================== Turmas / Plano / Presenças / Boletins / Atividades ===================== */
+function criarTurma(){
+  const nome = document.getElementById('tNome').value.trim();
+  const ano = document.getElementById('tAno').value.trim();
+  const serie = document.getElementById('tSerie').value.trim();
+  if(!nome){ alert('Informe o nome.'); return; }
+  const prof = getProf();
+  if(!prof.turmas) prof.turmas = [];
+  if(prof.turmas.find(t => t.nome.toLowerCase() === nome.toLowerCase())){
+    alert('Essa turma já existe.');
+    return;
+  }
+  prof.turmas.push({ nome, ano, serie, alunos:[], plano:'', presencas:{}, atividades:[], trabalhos:[] });
+  saveDB();
+  document.getElementById('tNome').value='';
+  document.getElementById('tAno').value='';
+  document.getElementById('tSerie').value='';
+  renderTurmas();
+  fillTurmaSelects();
+  renderDashboard();
+}
+
+function renderTurmas(){
+  const prof = getProf();
+  const el = document.getElementById('listaTurmas');
+  el.innerHTML = '';
+  if(!prof.turmas || !prof.turmas.length){
+    el.innerHTML = '<p class="muted">Nenhuma turma criada.</p>';
+    return;
+  }
+  prof.turmas.forEach((t, ti)=>{
+    const d = document.createElement('div');
+    d.className='card';
+    d.innerHTML = `
+      <h3>${t.nome}</h3>
+      <p class="muted">${t.serie||'-'} · ${t.ano||'-'} · ${t.alunos.length} aluno(s)</p>
+      <h4>Alunos</h4>
+      <ul id="tl${ti}"></ul>
+      <div class="row">
+        <input id="alunoUser${ti}" placeholder="Usuário do aluno">
+        <input id="alunoPass${ti}" placeholder="Senha do aluno (numérica)" type="password">
+      </div>
+      <button class="btn-small" onclick="addAluno(${ti})">Adicionar aluno</button>
+      <button class="btn-danger btn-small" onclick="delTurma(${ti})">Excluir turma</button>
+    `;
+    el.appendChild(d);
+
+    const ul = d.querySelector(`#tl${ti}`);
+    t.alunos.forEach((a)=>{
+      const li = document.createElement('li');
+      li.textContent = a.username;
+      ul.appendChild(li);
+    });
+  });
+}
+function addAluno(ti){
+  const user = document.getElementById(`alunoUser${ti}`).value.trim();
+  const pass = document.getElementById(`alunoPass${ti}`).value.trim();
+  if(!user || !pass){ alert('Preencha usuário e senha'); return; }
+  const prof = getProf();
+  const t = prof.turmas[ti];
+  if(t.alunos.find(a => a.username.toLowerCase() === user.toLowerCase())){
+    alert('Esse aluno já existe nessa turma.');
+    return;
+  }
+  const notas = {}; MATERIAS.forEach(m => notas[m] = [0,0,0]);
+  t.alunos.push({ username:user, senha:pass, notas, faltas:0 });
+  saveDB();
+  renderTurmas();
+  fillTurmaSelects();
+  renderDashboard();
+}
+function delTurma(ti){
+  if(!confirm('Excluir turma?')) return;
+  const prof = getProf();
+  prof.turmas.splice(ti,1);
+  saveDB();
+  renderTurmas();
+  fillTurmaSelects();
+  renderDashboard();
+}
+
+/* === Plano === */
+function fillTurmaSelects(){
+  const prof = getProf();
+  ['planoTurmaSelect','presTurmaSelect','boletimTurmaSelect','ativTurmaSelect','trabTurmaSelect','faltasTurmaSelect']
+    .forEach(id=>{
+      const sel = document.getElementById(id);
+      if(!sel) return;
+      sel.innerHTML = '';
+      (prof.turmas||[]).forEach((t, ti)=>{
+        const opt = document.createElement('option');
+        opt.value = ti;
+        opt.textContent = t.nome;
+        sel.appendChild(opt);
+      });
+    });
+}
+function renderPlano(){
+  const prof = getProf();
+  const sel = document.getElementById('planoTurmaSelect');
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  document.getElementById('planoTexto').value = t?.plano || '';
+  sel.onchange = renderPlano;
+}
+function salvarPlano(){
+  const prof = getProf();
+  const sel = document.getElementById('planoTurmaSelect');
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  if(!t){ alert('Nenhuma turma.'); return; }
+  t.plano = document.getElementById('planoTexto').value;
+  saveDB();
+  document.getElementById('planoMsg').textContent = 'Plano salvo!';
+  setTimeout(()=> document.getElementById('planoMsg').textContent='', 2000);
+}
+
+/* === Presenças === */
+function renderPresencas(){
+  const prof = getProf();
+  const sel = document.getElementById('presTurmaSelect');
+  sel.onchange = renderPresencas;
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  const data = document.getElementById('presData').value;
+  const box = document.getElementById('presLista');
+  box.innerHTML = '';
+  if(!t){ box.innerHTML = '<p class="muted">Nenhuma turma.</p>'; return; }
+  if(!data){ box.innerHTML = '<p class="muted">Escolha uma data.</p>'; return; }
+
+  if(!t.presencas) t.presencas = {};
+  if(!t.presencas[data]) t.presencas[data] = {};
+
+  t.alunos.forEach((a, ai)=>{
+    const id = `chk_${ai}`;
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <label for="${id}">
+        <input type="checkbox" id="${id}" ${t.presencas[data][a.username] ? 'checked' : ''}>
+        ${a.username}
+      </label>
+    `;
+    const chk = div.querySelector('input');
+    chk.onchange = ()=>{
+      t.presencas[data][a.username] = chk.checked;
+      saveDB();
+      renderDashboard();
+    };
+    box.appendChild(div);
+  });
+
+  document.getElementById('presData').onchange = renderPresencas;
+}
+
+/* === FALTAS RÁPIDAS (NOVO) === */
+function renderFaltasRapidas(){
+  const prof = getProf();
+  const sel = document.getElementById('faltasTurmaSelect');
+  sel.onchange = renderFaltasRapidas;
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  const box = document.getElementById('faltasRapidasBox');
+  box.innerHTML = '';
+  if(!t){ box.innerHTML = '<p class="muted">Nenhuma turma.</p>'; return; }
+  if(!t.alunos || !t.alunos.length){ box.innerHTML = '<p class="muted">Nenhum aluno nesta turma.</p>'; return; }
+
+  // Tabela simples: Nome | Faltas
+  let html = `<table>
+    <thead><tr><th>Aluno</th><th>Faltas</th></tr></thead><tbody>`;
+  t.alunos.forEach((a, ai)=>{
+    html += `<tr>
+      <td>${a.username}</td>
+      <td><input type="number" min="0" value="${a.faltas||0}" style="width:80px" onchange="faltasRapidasChange(${ti},${ai},this.value)"></td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  box.innerHTML = html;
+
+  // Gráfico
+  drawFaltasChart(t);
+}
+function faltasRapidasChange(ti, ai, value){
+  const prof = getProf();
+  const t = prof.turmas[ti];
+  const a = t.alunos[ai];
+  a.faltas = parseInt(value)||0;
+  saveDB();
+  renderDashboard();
+  drawFaltasChart(t);
+}
+function drawFaltasChart(turma){
+  const names = turma.alunos.map(a=>a.username);
+  const vals  = turma.alunos.map(a=>a.faltas||0);
+
+  const ctx = document.getElementById('faltasChart').getContext('2d');
+  if(faltasChartInstance) faltasChartInstance.destroy();
+  faltasChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: names,
+      datasets: [{ label: 'Faltas', data: vals }]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+/* === Boletins / PDF / Gráficos === */
+function renderBoletins(){
+  const prof = getProf();
+  const sel = document.getElementById('boletimTurmaSelect');
+  sel.onchange = renderBoletins;
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  const box = document.getElementById('boletimTurma');
+  box.innerHTML = '';
+  if(!t){ box.innerHTML = '<p class="muted">Nenhuma turma.</p>'; return; }
+  if(!t.alunos.length){ box.innerHTML = '<p class="muted">Nenhum aluno.</p>'; return; }
+
+  let html = `<div class="scroll-x">
+  <table>
+    <thead>
+      <tr>
+        <th rowspan="2">Aluno</th>
+        <th rowspan="2">Matéria</th>
+        <th colspan="3">Unidades</th>
+        <th rowspan="2">Média da matéria</th>
+        <th rowspan="2">Faltas</th>
+      </tr>
+      <tr>
+        <th>U1</th><th>U2</th><th>U3</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  t.alunos.forEach((a, ai)=>{
+    MATERIAS.forEach((m, mi)=>{
+      const n = a.notas[m] || [0,0,0];
+      const med = ((n[0]+n[1]+n[2])/3).toFixed(2);
+      html += `<tr>
+        ${mi===0 ? `<td rowspan="${MATERIAS.length}">${a.username}</td>` : ''}
+        <td>${m}</td>
+        <td><input type="number" min="0" max="10" step="0.1" value="${n[0]}" onchange="notaChange(${ti},${ai},'${m}',0,this.value)"></td>
+        <td><input type="number" min="0" max="10" step="0.1" value="${n[1]}" onchange="notaChange(${ti},${ai},'${m}',1,this.value)"></td>
+        <td><input type="number" min="0" max="10" step="0.1" value="${n[2]}" onchange="notaChange(${ti},${ai},'${m}',2,this.value)"></td>
+        <td>${med}</td>
+        ${mi===0 ? `<td rowspan="${MATERIAS.length}"><input type="number" min="0" value="${a.faltas||0}" onchange="faltasChange(${ti},${ai},this.value)" style="width:70px;"></td>` : ''}
+      </tr>`;
+    });
+  });
+  html += `</tbody></table></div>`;
+
+  // média geral por aluno
+  html += `<h3>Média geral por aluno</h3><table><thead><tr><th>Aluno</th><th>Média geral</th></tr></thead><tbody>`;
+  t.alunos.forEach(a=>{
+    const meds = MATERIAS.map(m => {
+      const n = a.notas[m] || [0,0,0];
+      return (n[0]+n[1]+n[2])/3;
+    });
+    const geral = (meds.reduce((acc, v)=>acc+v,0)/MATERIAS.length).toFixed(2);
+    html += `<tr><td>${a.username}</td><td>${geral}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+
+  box.innerHTML = html;
+
+  document.getElementById('btnPDF').onclick = ()=> exportPDF(t);
+  renderGraficoTurma(t);
+}
+
+function notaChange(ti, ai, materia, idx, value){
+  const prof = getProf();
+  const t = prof.turmas[ti];
+  const a = t.alunos[ai];
+  const v = parseFloat(value);
+  if(isNaN(v) || v<0 || v>10){ alert('Nota inválida'); renderBoletins(); return; }
+  a.notas[materia][idx] = v;
+  saveDB();
+  renderBoletins();
+  renderDashboard();
+}
+function faltasChange(ti, ai, value){
+  const prof = getProf();
+  const t = prof.turmas[ti];
+  const a = t.alunos[ai];
+  a.faltas = parseInt(value)||0;
+  saveDB();
+  renderDashboard();
+}
+
+async function exportPDF(turma){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 10;
+  doc.setFontSize(14);
+  doc.text(`Boletim - ${turma.nome}`, 10, y);
+  y+=6;
+  doc.setFontSize(10);
+
+  turma.alunos.forEach(a=>{
+    y+=6;
+    doc.text(`Aluno: ${a.username}`, 10, y);
+    y+=4;
+    MATERIAS.forEach(m=>{
+      const n = a.notas[m];
+      const med = ((n[0]+n[1]+n[2])/3).toFixed(2);
+      const line = `${m}: [${n[0]}, ${n[1]}, ${n[2]}] Média: ${med}`;
+      const splitted = doc.splitTextToSize(line, 180);
+      splitted.forEach(line=> {
+        y += 5;
+        if(y>280){ doc.addPage(); y=10; }
+        doc.text(line, 10, y);
+      });
+    });
+    y+=6;
+    if(y>280){ doc.addPage(); y=10; }
+  });
+
+  doc.save(`boletim_${turma.nome}.pdf`);
+}
+
+function renderGraficoTurma(turma){
+  const ctx = document.getElementById('graficoTurma').getContext('2d');
+  const medias = MATERIAS.map(m=>{
+    let soma = 0, count = 0;
+    turma.alunos.forEach(a=>{
+      const n = a.notas[m];
+      if(n){ soma += (n[0]+n[1]+n[2])/3; count++; }
+    });
+    return count ? (soma/count).toFixed(2) : 0;
+  });
+
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MATERIAS,
+      datasets: [{ label: 'Média da turma', data: medias }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero:true, max:10 } } }
+  });
+}
+
+/* === Atividades === */
+function renderAtividades(){
+  const prof = getProf();
+  const sel = document.getElementById('ativTurmaSelect');
+  sel.onchange = renderAtividades;
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  const box = document.getElementById('ativLista');
+  box.innerHTML = '';
+  if(!t){ box.innerHTML = '<p class="muted">Nenhuma turma.</p>'; return; }
+  if(!t.atividades) t.atividades = [];
+  if(!t.atividades.length){
+    box.innerHTML = '<p class="muted">Sem atividades enviadas.</p>';
+    return;
+  }
+  let html = `<ul>`;
+  t.atividades.forEach((a,i)=>{ html += `<li>${a.nome} (${a.tipo})</li>`; });
+  html += `</ul>`;
+  box.innerHTML = html;
+}
+function enviarAtividades(){
+  const prof = getProf();
+  const sel = document.getElementById('ativTurmaSelect');
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  if(!t){ alert('Selecione turma.'); return; }
+  const files = document.getElementById('ativUpload').files;
+  if(!files.length){ alert('Selecione arquivos.'); return; }
+  if(!t.atividades) t.atividades = [];
+  [...files].forEach(f=>{
+    let tipo = 'documento';
+    if(f.type.includes('image')) tipo='imagem';
+    else if(f.type.includes('video')) tipo='video';
+    else if(f.name.toLowerCase().endsWith('.pdf')) tipo='pdf';
+    t.atividades.push({ nome: f.name, tipo, size: f.size });
+  });
+  saveDB();
+  document.getElementById('ativUpload').value='';
+  renderAtividades();
+}
+
+/* ===================== Trabalhos / Provas (Professor) ===================== */
+let trabalhoAberto = { ti: null, wi: null };
+
+function renderTrabalhos(){
+  const prof = getProf();
+  const sel = document.getElementById('trabTurmaSelect');
+  sel.onchange = renderTrabalhos;
+  const ti = Number(sel.value || 0);
+  const t = prof.turmas[ti];
+  const lista = document.getElementById('trabLista');
+  const detalhe = document.getElementById('trabDetalhe');
+  detalhe.classList.add('hidden');
+  lista.innerHTML = '';
+
+  if(!t){
+    lista.innerHTML = '<p class="muted">Nenhuma turma.</p>';
+    return;
+  }
+  if(!t.trabalhos) t.trabalhos = [];
+  if(!t.trabalhos.length){
+    lista.innerHTML = '<p class="muted">Nenhum trabalho criado.</p>';
+    return;
+  }
+
+  t.trabalhos.forEach((w, wi)=>{
+    const total = t.alunos.length;
+    let entregues = 0;
+    t.alunos.forEach(a=>{
+      if(w.submissions && w.submissions[a.username] && w.submissions[a.username].files?.length){
+        entregues++;
+      }
+    });
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <strong>${w.titulo}</strong> <br/>
+      <span class="muted">Data limite: ${w.dataLimite || '-'}</span><br/>
+      <span class="muted">Entregues: ${entregues}/${total}</span><br/>
+      <button class="btn-small" onclick="abrirTrabalho(${ti},${wi})">Abrir / corrigir</button>
+    `;
+    lista.appendChild(card);
+  });
+}
+
+function criarTrabalho(){
+  const prof = getProf();
+  const ti = Number(document.getElementById('trabTurmaSelect').value || 0);
+  const t = prof.turmas[ti];
+  if(!t){ alert('Selecione turma.'); return; }
+
+  const titulo = document.getElementById('trabTitulo').value.trim();
+  const descricao = document.getElementById('trabDescricao').value.trim();
+  const dataLimite = document.getElementById('trabDataLimite').value;
+  const files = document.getElementById('trabArquivosProf').files;
+
+  if(!titulo){ alert('Informe o título.'); return; }
+
+  if(!t.trabalhos) t.trabalhos = [];
+  const anexosProf = [];
+  [...files].forEach(f=>{
+    anexosProf.push({ nome: f.name, tipo: f.type, size: f.size });
+  });
+
+  t.trabalhos.push({
+    id: Date.now(),
+    titulo, descricao, dataLimite,
+    anexosProf,
+    submissions: {}
+  });
+
+  saveDB();
+
+  document.getElementById('trabTitulo').value='';
+  document.getElementById('trabDescricao').value='';
+  document.getElementById('trabDataLimite').value='';
+  document.getElementById('trabArquivosProf').value='';
+  renderTrabalhos();
+}
+
+function abrirTrabalho(ti, wi){
+  const prof = getProf();
+  const t = prof.turmas[ti];
+  const w = t.trabalhos[wi];
+
+  trabalhoAberto = { ti, wi };
+
+  document.getElementById('trabDetalhe').classList.remove('hidden');
+  document.getElementById('trabDetalheTitulo').textContent = w.titulo;
+  document.getElementById('trabDetalheDesc').textContent = w.descricao || '';
+  document.getElementById('trabDetalheLimite').textContent = w.dataLimite || '-';
+
+  const box = document.getElementById('trabSubmissoes');
+  box.innerHTML = '';
+  const table = document.createElement('table');
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Aluno</th>
+        <th>Entregou?</th>
+        <th>Arquivos</th>
+        <th>Data entrega</th>
+        <th>Nota</th>
+        <th>Feedback</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+  box.appendChild(table);
+  const tbody = table.querySelector('tbody');
+
+  t.alunos.forEach(a=>{
+    const sub = w.submissions?.[a.username];
+    const tr = document.createElement('tr');
+
+    const entregou = sub && sub.files && sub.files.length > 0;
+    const arquivos = entregou ? sub.files.map(f=>f.nome).join(', ') : '-';
+    const data = entregou ? new Date(sub.entregueEm).toLocaleString() : '-';
+    const nota = (sub?.nota ?? '') === '' ? '' : sub.nota;
+    const feedback = sub?.feedback ?? '';
+
+    tr.innerHTML = `
+      <td>${a.username}</td>
+      <td>${entregou ? 'Sim' : 'Não'}</td>
+      <td>${arquivos}</td>
+      <td>${data}</td>
+      <td><input type="number" min="0" max="10" step="0.1" value="${nota}" style="width:70px"></td>
+      <td><textarea rows="2" style="width:140px">${feedback}</textarea></td>
+      <td><button class="btn-small">Salvar</button></td>
+    `;
+
+    const btnSalvar = tr.querySelector('button');
+    btnSalvar.onclick = ()=>{
+      const inputNota = tr.querySelector('input');
+      const textareaFb = tr.querySelector('textarea');
+      const n = parseFloat(inputNota.value);
+      if(isNaN(n) || n<0 || n>10){ alert('Nota inválida'); return; }
+      if(!w.submissions[a.username]) w.submissions[a.username] = { files:[], entregueEm: null };
+      w.submissions[a.username].nota = n;
+      w.submissions[a.username].feedback = textareaFb.value;
+      saveDB();
+      alert('Salvo!');
+    };
+
+    tbody.appendChild(tr);
+  });
+}
+
+/* ===================== Fluxo Aluno ===================== */
+function initAluno(){
+  document.getElementById('menuProf').style.display='none';
+  document.getElementById('menuAluno').style.display='block';
+  document.getElementById('contentProf').style.display='none';
+  document.getElementById('contentAluno').style.display='block';
+
+  document.querySelectorAll('[data-aluno]').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('[data-aluno]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.getAttribute('data-aluno');
+      showAlunoTab(tab);
+    }
+  });
+
+  renderAlunoBoletim();
+  renderAlunoPlano();
+  renderAlunoPresencas();
+  renderAlunoAtividades();
+  renderAlunoTrabalhos();
+
+  showAlunoTab('boletim');
+}
+
+function showAlunoTab(tab){
+  document.getElementById('alunoBoletim').classList.add('hidden');
+  document.getElementById('alunoPlano').classList.add('hidden');
+  document.getElementById('alunoPresencas').classList.add('hidden');
+  document.getElementById('alunoAtividades').classList.add('hidden');
+  document.getElementById('alunoTrabalhos').classList.add('hidden');
+
+  if(tab==='boletim') document.getElementById('alunoBoletim').classList.remove('hidden');
+  if(tab==='plano') document.getElementById('alunoPlano').classList.remove('hidden');
+  if(tab==='presencas') document.getElementById('alunoPresencas').classList.remove('hidden');
+  if(tab==='atividades') document.getElementById('alunoAtividades').classList.remove('hidden');
+  if(tab==='trabalhos') document.getElementById('alunoTrabalhos').classList.remove('hidden');
+}
+
+function getAlunoContext(){
+  const p = db.professores[S.profIndex];
+  const t = p.turmas[S.turmaIndex];
+  const a = t.alunos[S.alunoIndex];
+  return {p,t,a};
+}
+
+function renderAlunoBoletim(){
+  const { t, a } = getAlunoContext();
+  const box = document.getElementById('alunoBoletimBox');
+  let html = `<table>
+    <thead>
+      <tr><th rowspan="2">Matéria</th><th colspan="3">Unidades</th><th rowspan="2">Média</th></tr>
+      <tr><th>U1</th><th>U2</th><th>U3</th></tr>
+    </thead><tbody>`;
+  const medias=[];
+  MATERIAS.forEach(m=>{
+    const n = a.notas[m];
+    const med = ((n[0]+n[1]+n[2])/3).toFixed(2);
+    medias.push(parseFloat(med));
+    html += `<tr>
+      <td>${m}</td>
+      <td>${n[0]}</td><td>${n[1]}</td><td>${n[2]}</td>
+      <td>${med}</td>
+    </tr>`;
+  });
+  const geral = (medias.reduce((acc,v)=>acc+v,0)/MATERIAS.length).toFixed(2);
+  html += `</tbody><tfoot><tr><th colspan="4" style="text-align:right;">Média geral</th><th>${geral}</th></tr></tfoot></table>`;
+  html += `<p class="muted">Faltas: ${a.faltas||0}</p>`;
+  box.innerHTML = html;
+}
+
+function renderAlunoPlano(){
+  const { t } = getAlunoContext();
+  document.getElementById('alunoPlanoBox').textContent = t.plano || 'Nenhum plano cadastrado.';
+}
+
+function renderAlunoPresencas(){
+  const { t, a } = getAlunoContext();
+  const box = document.getElementById('alunoPresencasBox');
+  box.innerHTML = '';
+  if(!t.presencas || Object.keys(t.presencas).length===0){
+    box.innerHTML = '<p class="muted">Nenhuma presença lançada.</p>';
+    return;
+  }
+  let html = `<table><thead><tr><th>Data</th><th>Presente?</th></tr></thead><tbody>`;
+  Object.keys(t.presencas).sort().forEach(data=>{
+    const pres = !!t.presencas[data][a.username];
+    html += `<tr><td>${data}</td><td>${pres ? 'Sim' : 'Não'}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  box.innerHTML = html;
+}
+
+function renderAlunoAtividades(){
+  const { t } = getAlunoContext();
+  const box = document.getElementById('alunoAtividadesBox');
+  if(!t.atividades || !t.atividades.length){
+    box.innerHTML = '<p class="muted">Nenhuma atividade enviada.</p>';
+    return;
+  }
+  let html = '<ul>';
+  t.atividades.forEach(a=>{
+    html += `<li>${a.nome} (${a.tipo})</li>`;
+  });
+  html += '</ul>';
+  box.innerHTML = html;
+}
+
+/* ========== Trabalhos / Provas (Aluno) ========== */
+let alunoTrabalhoSel = { wi: null };
+
+function renderAlunoTrabalhos(){
+  const { t, a } = getAlunoContext();
+  const lista = document.getElementById('alunoTrabalhosLista');
+  const detalhe = document.getElementById('alunoTrabalhoDetalhe');
+  detalhe.classList.add('hidden');
+  lista.innerHTML = '';
+
+  if(!t.trabalhos || !t.trabalhos.length){
+    lista.innerHTML = '<p class="muted">Nenhum trabalho/prova disponível.</p>';
+    return;
+  }
+
+  t.trabalhos.forEach((w, wi)=>{
+    const sub = w.submissions?.[a.username];
+    const entregue = sub && sub.files?.length;
+    const corrigido = entregue && (sub.nota != null);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <strong>${w.titulo}</strong><br/>
+      <span class="muted">Data limite: ${w.dataLimite || '-'}</span><br/>
+      <span class="muted">Status: ${corrigido ? 'Corrigido' : (entregue ? 'Entregue' : 'Pendente')}</span><br/>
+      ${corrigido ? `<span class="muted">Nota: ${sub.nota} | Feedback: ${sub.feedback || '-'}</span><br/>` : ''}
+      <button class="btn-small">Abrir</button>
+    `;
+    const btn = card.querySelector('button');
+    btn.onclick = ()=> abrirAlunoTrabalho(wi);
+    lista.appendChild(card);
+  });
+}
+
+function abrirAlunoTrabalho(wi){
+  alunoTrabalhoSel.wi = wi;
+  const { t, a } = getAlunoContext();
+  const w = t.trabalhos[wi];
+  document.getElementById('alunoTrabalhoDetalhe').classList.remove('hidden');
+  document.getElementById('alunoTrabTitulo').textContent = w.titulo;
+  document.getElementById('alunoTrabDesc').textContent = w.descricao || '';
+  document.getElementById('alunoTrabLimite').textContent = w.dataLimite || '-';
+
+  const fbBox = document.getElementById('alunoFeedbackBox');
+  const sub = w.submissions?.[a.username];
+  if(sub && sub.nota != null){
+    fbBox.classList.remove('hidden');
+    fbBox.innerHTML = `<p><strong>Sua nota:</strong> ${sub.nota}</p><p><strong>Feedback:</strong> ${sub.feedback || '-'}</p>`;
+  }else{
+    fbBox.classList.add('hidden');
+    fbBox.innerHTML = '';
+  }
+}
+
+function alunoEnviarTrabalho(){
+  const { t, a } = getAlunoContext();
+  const wi = alunoTrabalhoSel.wi;
+  if(wi == null) return alert('Selecione um trabalho.');
+  const w = t.trabalhos[wi];
+  const files = document.getElementById('alunoTrabFiles').files;
+  if(!files.length){ alert('Selecione um ou mais arquivos.'); return; }
+
+  if(!w.submissions) w.submissions = {};
+  const arr = [];
+  [...files].forEach(f=> arr.push({ nome: f.name, tipo: f.type, size: f.size }));
+  w.submissions[a.username] = {
+    files: arr,
+    entregueEm: new Date().toISOString(),
+    nota: w.submissions[a.username]?.nota ?? null,
+    feedback: w.submissions[a.username]?.feedback ?? null
+  };
+  saveDB();
+  document.getElementById('alunoTrabFiles').value='';
+  alert('Enviado com sucesso!');
+  renderAlunoTrabalhos();
+  abrirAlunoTrabalho(wi);
+}
+</script>
+</body>
+</html>
